@@ -1,0 +1,286 @@
+object FTelaJogo: TFTelaJogo
+  Left = 0
+  Top = 0
+  BorderStyle = Single
+  Caption = 'Forca'
+  ClientHeight = 597
+  ClientWidth = 1070
+  Position = DesktopCenter
+  StyleBook = StyleBook1
+  FormFactor.Width = 320
+  FormFactor.Height = 480
+  FormFactor.Devices = [Desktop]
+  OnCreate = FormCreate
+  OnClose = FormClose
+  DesignerMasterStyle = 0
+  object StyleBook1: TStyleBook
+    Styles = <
+      item
+      end>
+  end
+  object ScrollBox1: TScrollBox
+    Touch.InteractiveGestures = [Zoom, Pan, Rotate, TwoFingerTap, PressAndTap, LongTap, DoubleTap]
+    Align = Client
+    Size.Width = 1070.000000000000000000
+    Size.Height = 597.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 8
+    Viewport.Width = 1070.000000000000000000
+    Viewport.Height = 597.000000000000000000
+    object edtBaseDescoberto: TEdit
+      Touch.InteractiveGestures = [LongTap, DoubleTap]
+      TabOrder = 0
+      Text = 'A'
+      TextSettings.Font.Size = 72.000000000000000000
+      TextSettings.HorzAlign = Center
+      Position.X = 1003.000000000000000000
+      Size.Width = 97.000000000000000000
+      Size.Height = 32.000000000000000000
+      Size.PlatformDefault = False
+      StyledSettings = [Family, Style, FontColor]
+      Visible = False
+    end
+    object edtBaseOculto: TEdit
+      Touch.InteractiveGestures = [LongTap, DoubleTap]
+      Align = Scale
+      StyleLookup = 'edtBaseOcultoStyle1'
+      TabOrder = 1
+      Text = 'A'
+      TextSettings.Font.Size = 10.000000000000000000
+      TextSettings.HorzAlign = Center
+      Position.X = 867.000000000000000000
+      Size.Width = 97.000000000000000000
+      Size.Height = 32.000000000000000000
+      Size.PlatformDefault = False
+      StyledSettings = [Family, Style, FontColor]
+      Visible = False
+    end
+    object GBJogar: TGroupBox
+      Enabled = False
+      StyledSettings = [Family, Style, FontColor, Other]
+      Position.X = 48.000000000000000000
+      Position.Y = 361.000000000000000000
+      Size.Width = 1001.000000000000000000
+      Size.Height = 209.000000000000000000
+      Size.PlatformDefault = False
+      Text = 'Jogar'
+      TextSettings.Font.Size = 20.000000000000000000
+      TabOrder = 2
+      object gpRoleta: TGroupBox
+        StyledSettings = [Family, Style, FontColor, Other]
+        Position.X = 8.000000000000000000
+        Position.Y = 32.000000000000000000
+        Size.Width = 425.000000000000000000
+        Size.Height = 161.000000000000000000
+        Size.PlatformDefault = False
+        Text = 'Rode a roleta'
+        TextSettings.Font.Size = 20.000000000000000000
+        TabOrder = 9
+        object btnRoleta: TButton
+          Position.X = 24.000000000000000000
+          Position.Y = 32.000000000000000000
+          Size.Width = 385.000000000000000000
+          Size.Height = 113.000000000000000000
+          Size.PlatformDefault = False
+          TabOrder = 3
+          Text = 'Roda Roleta'
+          OnClick = btnRoletaClick
+        end
+      end
+      object gpPalpite: TGroupBox
+        Enabled = False
+        StyledSettings = [Family, Style, FontColor, Other]
+        Position.X = 552.000000000000000000
+        Position.Y = 24.000000000000000000
+        Size.Width = 433.000000000000000000
+        Size.Height = 169.000000000000000000
+        Size.PlatformDefault = False
+        Text = 'Realize um palpite'
+        TextSettings.Font.Size = 20.000000000000000000
+        TabOrder = 8
+        object edtLetra: TEdit
+          Touch.InteractiveGestures = [LongTap, DoubleTap]
+          TabOrder = 9
+          MaxLength = 1
+          Text = 'A'
+          TextSettings.Font.Size = 30.000000000000000000
+          Position.X = 48.000000000000000000
+          Position.Y = 56.000000000000000000
+          Size.Width = 41.000000000000000000
+          Size.Height = 32.000000000000000000
+          Size.PlatformDefault = False
+          StyledSettings = [Family, Style, FontColor]
+        end
+        object Button1: TButton
+          Position.X = 25.000000000000000000
+          Position.Y = 112.000000000000000000
+          Size.Width = 80.000000000000000000
+          Size.Height = 41.000000000000000000
+          Size.PlatformDefault = False
+          TabOrder = 7
+          Text = 'Letra'
+          OnClick = Button1Click
+        end
+        object edtPalavra: TEdit
+          Touch.InteractiveGestures = [LongTap, DoubleTap]
+          TabOrder = 8
+          Position.X = 160.000000000000000000
+          Position.Y = 83.000000000000000000
+          Size.Width = 241.000000000000000000
+          Size.Height = 32.000000000000000000
+          Size.PlatformDefault = False
+        end
+        object Button2: TButton
+          Position.X = 160.000000000000000000
+          Position.Y = 112.000000000000000000
+          Size.Width = 241.000000000000000000
+          Size.Height = 41.000000000000000000
+          Size.PlatformDefault = False
+          TabOrder = 3
+          Text = 'Palavra'
+          OnClick = Button2Click
+        end
+      end
+    end
+    object GroupBox2: TGroupBox
+      Enabled = False
+      StyledSettings = [Family, Style, FontColor, Other]
+      Position.X = 536.000000000000000000
+      Position.Y = 64.000000000000000000
+      Size.Width = 249.000000000000000000
+      Size.Height = 145.000000000000000000
+      Size.PlatformDefault = False
+      Text = 'Jogadores'
+      TextSettings.Font.Size = 20.000000000000000000
+      TabOrder = 4
+      object SGJogadores: TStringGrid
+        CanFocus = True
+        ClipChildren = True
+        Position.X = 20.000000000000000000
+        Position.Y = 37.000000000000000000
+        Size.Width = 205.000000000000000000
+        Size.Height = 93.000000000000000000
+        Size.PlatformDefault = False
+        TabOrder = 11
+        RowCount = 3
+        Viewport.Width = 201.000000000000000000
+        Viewport.Height = 68.000000000000000000
+        object nome: TStringColumn
+          Header = 'Nome'
+        end
+        object pontos: TStringColumn
+          Header = 'Pontos'
+        end
+      end
+    end
+    object lblJogador: TLabel
+      Align = Top
+      StyledSettings = [Family, Style, FontColor]
+      Size.Width = 1070.000000000000000000
+      Size.Height = 30.000000000000000000
+      Size.PlatformDefault = False
+      TextSettings.Font.Size = 26.000000000000000000
+      TabOrder = 5
+    end
+    object lblPontos: TLabel
+      Align = Top
+      StyledSettings = [Family, Style, FontColor]
+      Position.Y = 65.000000000000000000
+      Size.Width = 1070.000000000000000000
+      Size.Height = 30.000000000000000000
+      Size.PlatformDefault = False
+      TextSettings.Font.Size = 26.000000000000000000
+      TabOrder = 6
+    end
+    object lblPontoValendo: TLabel
+      Align = Top
+      AutoSize = True
+      StyledSettings = [Family, Style, FontColor]
+      Position.Y = 30.000000000000000000
+      Size.Width = 1070.000000000000000000
+      Size.Height = 35.000000000000000000
+      Size.PlatformDefault = False
+      TextSettings.Font.Size = 26.000000000000000000
+      TabOrder = 7
+    end
+    object Panel1: TPanel
+      Margins.Left = 50.000000000000000000
+      Margins.Right = 50.000000000000000000
+      Position.X = 50.000000000000000000
+      Position.Y = 221.000000000000000000
+      Size.Width = 1000.000000000000000000
+      Size.Height = 125.000000000000000000
+      Size.PlatformDefault = False
+      TabOrder = 8
+      object PnlLetras: TPanel
+        Align = Center
+        Size.Width = 120.000000000000000000
+        Size.Height = 125.000000000000000000
+        Size.PlatformDefault = False
+        Visible = False
+        TabOrder = 0
+      end
+    end
+    object GBNome: TGroupBox
+      StyledSettings = [Family, Style, FontColor, Other]
+      Position.X = 800.000000000000000000
+      Position.Y = 48.000000000000000000
+      Size.Width = 249.000000000000000000
+      Size.Height = 161.000000000000000000
+      Size.PlatformDefault = False
+      Text = 'Preencha os dados'
+      TextSettings.Font.Size = 20.000000000000000000
+      TabOrder = 3
+      object EdtNome: TEdit
+        Touch.InteractiveGestures = [LongTap, DoubleTap]
+        TabOrder = 14
+        Position.X = 24.000000000000000000
+        Position.Y = 40.000000000000000000
+        Size.Width = 201.000000000000000000
+        Size.Height = 32.000000000000000000
+        Size.PlatformDefault = False
+      end
+      object btnNome: TButton
+        Position.X = 24.000000000000000000
+        Position.Y = 131.000000000000000000
+        Size.Width = 201.000000000000000000
+        Size.Height = 22.000000000000000000
+        Size.PlatformDefault = False
+        TabOrder = 11
+        Text = 'Iniciar Jogo'
+        OnClick = btnNomeClick
+      end
+      object edtHost: TEdit
+        Touch.InteractiveGestures = [LongTap, DoubleTap]
+        TabOrder = 13
+        Text = 'localhost'
+        Position.X = 24.000000000000000000
+        Position.Y = 88.000000000000000000
+        Size.Width = 201.000000000000000000
+        Size.Height = 32.000000000000000000
+        Size.PlatformDefault = False
+      end
+    end
+    object Label2: TLabel
+      Position.X = 824.000000000000000000
+      Position.Y = 120.000000000000000000
+      Text = 'Host'
+      TabOrder = 12
+    end
+    object Label1: TLabel
+      Position.X = 824.000000000000000000
+      Position.Y = 72.000000000000000000
+      Text = 'Nome'
+      TabOrder = 13
+    end
+  end
+  object ClienteSocket: TIdTCPClient
+    ConnectTimeout = 0
+    Host = 'localhost'
+    IPVersion = Id_IPv4
+    Port = 2200
+    ReadTimeout = -1
+    Left = 448
+    Top = 48
+  end
+end

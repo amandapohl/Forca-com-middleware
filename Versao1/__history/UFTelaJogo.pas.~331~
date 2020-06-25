@@ -1,0 +1,262 @@
+unit UFTelaJogo;
+
+interface
+
+uses
+  System.SysUtils, System.Types, System.UITypes, System.Classes, System.Variants,
+  FMX.Types, FMX.Controls, FMX.Forms, FMX.Graphics, FMX.Dialogs,
+  FMX.Controls.Presentation, FMX.StdCtrls, FMX.Edit;
+
+type
+  TFTelaJogo = class(TForm)
+    Panel1: TPanel;
+    PnlLetras: TPanel;
+    edtBaseDescoberto: TEdit;
+    lbIniciar: TLabel;
+    edtBaseOculto: TEdit;
+    StyleBook1: TStyleBook;
+    lblPontos: TLabel;
+    lblJogador: TLabel;
+    lblPontoValendo: TLabel;
+    gpPalpite: TGroupBox;
+    edtLetra: TEdit;
+    Button1: TButton;
+    edtPalavra: TEdit;
+    Button2: TButton;
+    gpRoleta: TGroupBox;
+    btnRoleta: TButton;
+    procedure FormCreate(Sender: TObject);
+    procedure FormClose(Sender: TObject; var Action: TCloseAction);
+    procedure Button1Click(Sender: TObject);
+    procedure Button2Click(Sender: TObject);
+    procedure btnRoletaClick(Sender: TObject);
+  private
+    procedure GeraTela(aPalavra: String);
+    procedure CriaLetra(aLetra: String; aIndice : Integer);
+    procedure ImportaPalavras;
+    procedure LimpaLista(aLista: TStringList);
+    procedure ProcurarLetra(aLetra: String);
+    procedure AcertouPalavra;
+    procedure ProximoJogador;
+    procedure ProximaRodada;
+    { Private declarations }
+  public
+    { Public declarations }
+  end;
+
+  TJogador = class
+    public
+      Nome : String;
+      Pontos : Integer;
+  end;
+
+var
+  FTelaJogo: TFTelaJogo;
+  FLetras : TStringList;
+  FPalavras : TStringList;
+  FPalavraAtual : String;
+  FJogadores : TStringList;
+  FJogadorAtual : TJogador;
+  FIndiceJogadorAtual : Integer;
+  FPontosValendo : Integer;
+  FLetrasUtilizadas : TStringList;
+  FLetrasDescobertas : Integer;
+
+implementation
+
+{$R *.fmx}
+
+procedure TFTelaJogo.ProcurarLetra(aLetra : String);
+var
+  vLetra : TEdit;
+  i : Integer;
+  vAcertos : Integer;
+begin
+  vAcertos := 0;
+  if (UpperCase(FPalavraAtual).IndexOf(aLetra.Chars[0]) < 0) then begin
+    ShowMessage('Letra não encontrada.');
+    ProximoJogador;                          
+    gpRoleta.Enabled := True;
+    gpPalpite.Enabled := False; 
+    lblPontoValendo.Text := 'Rode a roleta.';
+    Exit;
+  end;
+
+  if FLetrasUtilizadas.IndexOf(aLetra) < 0 then begin
+    FLetrasUtilizadas.Add(aLetra);
+  end else begin
+    ShowMessage('Letra já escolhida.');
+    Exit;
+  end;
+
+  
+  for i := FLetras.Count - 1 downto 0 do begin
+    vLetra := TEdit(FLetras.Objects[i]);        
+    if UpperCase(vLetra.Text) = UpperCase(aLetra) then begin  
+      vLetra.TextSettings := edtBaseDescoberto.TextSettings;
+      vLetra.StyledSettings := edtBaseDescoberto.StyledSettings;
+      vLetra.StyleLookup := edtBaseDescoberto.StyleLookup;
+      vLetra.Enabled := True;                                   
+      vLetra.ReadOnly := True;
+      inc(vAcertos);
+    end;
+  end; 
+  FJogadorAtual.Pontos := FJogadorAtual.Pontos + (vAcertos * FPontosValendo);   
+  lblPontos.Text := 'Pontuação: ' + IntToStr(FJogadorAtual.Pontos);
+  gpRoleta.Enabled := True;
+  gpPalpite.Enabled := False;            
+  lblPontoValendo.Text := 'Rode a roleta.';
+end;
+
+procedure TFTelaJogo.FormClose(Sender: TObject; var Action: TCloseAction);
+begin         
+  LimpaLista(FLetras);
+  LimpaLista(FPalavras);
+  LimpaLista(FJogadores);
+  FLetrasUtilizadas.Free;
+  FLetras.Free;     
+  FPalavras.Free;
+  FJogadores.Free;
+end;
+
+procedure TFTelaJogo.ProximaRodada;
+var
+  vPalavraEscolhida : String;
+begin        
+  vPalavraEscolhida := FPalavras[Random(FPalavras.Count)];                  
+  if (vPalavraEscolhida = FPalavraAtual) and (FPalavras.Count > 1) then begin
+    while (vPalavraEscolhida = FPalavraAtual) do begin
+      vPalavraEscolhida := FPalavras[Random(FPalavras.Count)]; 
+    end;                                                      
+  end;
+             
+  FPalavraAtual := vPalavraEscolhida;
+  GeraTela(FPalavraAtual);              
+  FLetrasUtilizadas.Clear;
+  FLetrasDescobertas := 0;
+end;
+
+procedure TFTelaJogo.FormCreate(Sender: TObject);
+var
+  vJogador : TJogador;
+begin
+  FLetrasUtilizadas := TStringList.Create;
+
+  FLetras := TStringList.Create;     
+  
+  FPalavras := TStringList.Create;   
+  FPalavras.LoadFromFile('Palavras.txt');
+
+  FJogadores := TStringList.Create;
+  vJogador := TJogador.Create;
+  vJogador.Nome := 'Player1'; 
+  FJogadores.AddObject('1', vJogador);
+  vJogador := TJogador.Create;
+  vJogador.Nome := 'Player2';         
+  FJogadores.AddObject('2', vJogador);
+  vJogador := TJogador.Create;
+  vJogador.Nome := 'Player3';         
+  FJogadores.AddObject('3', vJogador);
+
+  ProximoJogador;
+  ProximaRodada;
+end;
+
+procedure TFTelaJogo.LimpaLista(aLista : TStringList);
+var
+  i : Integer;
+begin      
+  for i := aLista.Count - 1 downto 0 do begin
+    aLista.Objects[i].Free;
+  end;      
+  aLista.Clear;
+end;
+
+procedure TFTelaJogo.GeraTela(aPalavra : String);
+var
+  i : Integer;
+  vLetra : TEdit;
+begin
+  lbIniciar.Visible := False;
+  PnlLetras.Visible := True;
+  LimpaLista(FLetras);
+  for i := Length(aPalavra) downto 1 do begin
+    CriaLetra(Copy(aPalavra,i,1), i);
+  end;
+  PnlLetras.Width := 100 * Length(aPalavra);
+end;
+
+procedure TFTelaJogo.btnRoletaClick(Sender: TObject);
+begin
+  FPontosValendo := Random(99) + 1;
+  lblPontoValendo.Text := 'Valendo ' + IntToStr(FPontosValendo) + ' pontos.';
+  gpRoleta.Enabled := False;
+  gpPalpite.Enabled := True;
+end;
+
+procedure TFTelaJogo.Button1Click(Sender: TObject);
+begin
+  ProcurarLetra(UpperCase(edtLetra.Text));
+  edtLetra.Text := '';
+end;
+
+procedure TFTelaJogo.Button2Click(Sender: TObject);
+begin
+  if UpperCase(edtPalavra.Text) = FPalavraAtual then begin
+    AcertouPalavra;
+  end else begin
+    ShowMessage('Errou!');
+    ProximoJogador;
+  end;               
+  gpRoleta.Enabled := True;
+  gpPalpite.Enabled := False; 
+  lblPontoValendo.Text := 'Rode a roleta.';
+  edtPalavra.Text := '';
+end;
+
+procedure TFTelaJogo.CriaLetra(aLetra : String; aIndice : Integer);
+var
+  vLetra : TEdit;
+begin
+  vLetra := TEdit.Create(PnlLetras);
+  vLetra.Parent := PnlLetras;
+  vLetra.TextSettings := edtBaseOculto.TextSettings;
+  vLetra.StyledSettings := edtBaseOculto.StyledSettings;
+  vLetra.Text := aLetra;
+  vLetra.Visible := True;
+  vLetra.Height := 125;
+  vLetra.Position.X := (aIndice - 1) * 100;
+  vLetra.Enabled := False;
+  FLetras.AddObject(IntToStr(aIndice), vLetra);    
+  vLetra.StyleLookup := edtBaseOculto.StyleLookup;
+end;
+
+procedure TFTelaJogo.ImportaPalavras;
+var
+  vUnits: TStringList;
+  i : Integer;
+begin
+  FPalavras.LoadFromFile('Palavras.txt');
+  FPalavras.Text := UpperCase(FPalavras.Text);
+end;
+
+procedure TFTelaJogo.AcertouPalavra;
+begin
+  ShowMessage('VENCEU');
+  ProximaRodada;
+end;
+
+procedure TFTelaJogo.ProximoJogador;
+begin
+  if (FJogadorAtual = nil) or (FIndiceJogadorAtual = FJogadores.Count - 1) then begin
+    FJogadorAtual := TJogador(FJogadores.Objects[0]);
+    FIndiceJogadorAtual := 0;
+  end else begin
+    FJogadorAtual := TJogador(FJogadores.Objects[FIndiceJogadorAtual + 1]);  
+    inc(FIndiceJogadorAtual);
+  end;
+  lblJogador.Text := 'Jogador atual: ' + FJogadorAtual.Nome;  
+  lblPontos.Text := 'Pontuação: ' + IntToStr(FJogadorAtual.Pontos);
+end;
+
+end.

@@ -1,0 +1,331 @@
+unit UFPrincipal;
+
+interface
+
+uses
+  System.SysUtils, System.Types, System.UITypes, System.Classes, System.Variants,
+  FMX.Types, FMX.Controls, FMX.Forms, FMX.Graphics, FMX.Dialogs,
+  IdBaseComponent, IdComponent, IdCustomTCPServer, IdTCPServer, IdContext,
+  FMX.Controls.Presentation, FMX.StdCtrls,
+  Generics.Collections, Thrift, Thrift.Collections, Thrift.Exception, Thrift.Utils,
+  Thrift.Stream, Thrift.Protocol, Thrift.Server, Thrift.Transport,
+  Thrift.Transport.WinHTTP, Thrift.Transport.MsxmlHTTP, Thrift.WinHTTP, Shared,
+  Tutorial;
+
+type
+  TForm1 = class(TForm)
+    Servidor: TIdTCPServer;
+    procedure ServidorExecute(AContext: TIdContext);
+    procedure FormClose(Sender: TObject; var Action: TCloseAction);
+    procedure FormCreate(Sender: TObject);
+  private
+    procedure LimpaLista(aLista: TStringList);
+    procedure ProximaRodada;
+    function ProcurarLetra(aLetra: string): String;
+    procedure ProximoJogador;
+    function ValidarPalavra(aPalavra: String): String;
+    procedure IniciaRPC;
+    { Private declarations }
+  public
+    { Public declarations }
+  end;
+
+  TCalculatorHandler = class( TInterfacedObject, TCalculator.Iface)
+  private
+  protected
+    FLog : TDictionary< Integer, ISharedStruct>;
+
+    // TSharedService.Iface
+    function  getStruct(key: Integer): ISharedStruct;
+
+    // TCalculator.Iface
+    procedure ping();
+    function  pesquisaPontos(num1: Integer; num2: Integer): Integer;
+    function  calculate(logid: Integer; const w: IWork): Integer;
+    procedure zip();
+    function getPalavra: String;
+    procedure setPalavra(aPalavra: String);
+
+  public
+    constructor Create;
+    destructor Destroy;  override;
+
+  end;
+
+var
+  Form1: TForm1;
+  FPalavras : TStringList;
+  FPalavraAtual : String;
+  FLetrasUtilizadas : TStringList;
+  FLetrasDescobertas : Integer;
+  FJogadores : TStringList;
+  FPontosValendo : Integer;
+  FIndiceJogadorAtual : Integer;
+  FThread: TThread;
+  FIniciou : Boolean;
+
+implementation
+
+{$R *.fmx}
+
+procedure TForm1.FormClose(Sender: TObject; var Action: TCloseAction);
+begin
+  LimpaLista(FPalavras);
+  FPalavras.Free;
+  LimpaLista(FJogadores);
+  FJogadores.Free;
+end;
+
+procedure TForm1.ServidorExecute(AContext: TIdContext);
+var
+  vRetornoAux,
+  vRetorno : String;
+begin
+  vRetorno := AContext.Connection.Socket.ReadLn;
+  if vRetorno = 'AttDados' then begin
+    // Palavra atual
+    AContext.Connection.Socket.WriteLn('FPalavraAtual');
+    vRetorno := AContext.Connection.Socket.ReadLn;
+    AContext.Connection.Socket.WriteLn(FPalavraAtual);
+    vRetorno := AContext.Connection.Socket.ReadLn;
+
+    // Jogadores
+    AContext.Connection.Socket.WriteLn('FJogadores');
+    vRetorno := AContext.Connection.Socket.ReadLn;
+    AContext.Connection.Socket.WriteLn(StringReplace(FJogadores.Text, #$D#$A, '|QUEBRA|', [rfReplaceAll]));
+    vRetorno := AContext.Connection.Socket.ReadLn;
+
+    // Pontos valendo
+    AContext.Connection.Socket.WriteLn('FPontosValendo');
+    vRetorno := AContext.Connection.Socket.ReadLn;
+    AContext.Connection.Socket.WriteLn(IntToStr(FPontosValendo));
+    vRetorno := AContext.Connection.Socket.ReadLn;
+
+    // Letras utilizadas
+    AContext.Connection.Socket.WriteLn('FLetrasUtilizadas');
+    vRetorno := AContext.Connection.Socket.ReadLn;
+    AContext.Connection.Socket.WriteLn(StringReplace(FLetrasUtilizadas.Text, #$D#$A, '|QUEBRA|', [rfReplaceAll]));
+    vRetorno := AContext.Connection.Socket.ReadLn;
+
+    // Letras utilizadas
+    AContext.Connection.Socket.WriteLn('FIndiceJogadorAtual');
+    vRetorno := AContext.Connection.Socket.ReadLn;
+    AContext.Connection.Socket.WriteLn(IntToStr(FIndiceJogadorAtual));
+    vRetorno := AContext.Connection.Socket.ReadLn;
+
+    AContext.Connection.Socket.WriteLn('fim');
+    Exit;
+  end;
+
+  if vRetorno = 'iniciarJogo' then begin
+    AContext.Connection.Socket.WriteLn('mandaNome');
+    vRetorno := AContext.Connection.Socket.ReadLn;
+    if FJogadores.IndexOfName(vRetorno) < 0 then begin
+      FJogadores.Add(vRetorno + '=0');
+      if not FIniciou then begin
+        IniciaRPC;
+        FIniciou := True;
+      end;
+
+    end;
+    AContext.Connection.Socket.WriteLn('blz');
+    Exit;
+  end;
+
+  if vRetorno = 'rodouRoleta' then begin
+    FPontosValendo := Random(90) + 10;
+    AContext.Connection.Socket.WriteLn(IntToStr(FPontosValendo));
+    Exit;
+  end;
+
+  if vRetorno = 'palpiteLetra' then begin
+    AContext.Connection.Socket.WriteLn('mandaLetrae');
+    vRetorno := AContext.Connection.Socket.ReadLn;
+    AContext.Connection.Socket.WriteLn(ProcurarLetra(vRetorno));
+  end;
+
+  if vRetorno = 'palpitePalavra' then begin
+    AContext.Connection.Socket.WriteLn('mandaLetrae');
+    vRetorno := AContext.Connection.Socket.ReadLn;
+    AContext.Connection.Socket.WriteLn(ValidarPalavra(vRetorno));
+  end;
+
+end;
+
+procedure TForm1.FormCreate(Sender: TObject);
+begin
+  FPalavras := TStringList.Create;
+  FPalavras.LoadFromFile('Palavras.txt');
+  FLetrasUtilizadas := TStringList.Create;
+  FJogadores := TStringList.Create;
+  ProximaRodada;
+  FPontosValendo := 0;
+
+end;
+
+procedure TForm1.IniciaRPC;
+begin
+  FThread := TThread.CreateAnonymousThread(
+    procedure
+    var handler   : TCalculator.Iface;
+        processor : IProcessor;
+        transport : IServerTransport;
+        server    : IServer;
+    begin
+      try
+        handler   := TCalculatorHandler.Create;
+        processor := TCalculator.TProcessorImpl.Create( handler);
+        transport := TServerSocketImpl.Create( 9090);
+        server    := TSimpleServer.Create( processor, transport);
+
+        try
+          server.Serve();
+        except
+          //
+        end;
+      except
+
+      end;
+    end);
+  FThread.Start;
+
+end;
+
+procedure TForm1.LimpaLista(aLista : TStringList);
+var
+  i : Integer;
+begin
+  for i := aLista.Count - 1 downto 0 do begin
+    aLista.Objects[i].Free;
+  end;
+  aLista.Clear;
+end;
+
+procedure TForm1.ProximaRodada;
+var
+  vPalavraEscolhida : String;
+begin
+  vPalavraEscolhida := FPalavras[Random(FPalavras.Count)];
+  if (vPalavraEscolhida = FPalavraAtual) and (FPalavras.Count > 1) then begin
+    while (vPalavraEscolhida = FPalavraAtual) do begin
+      vPalavraEscolhida := FPalavras[Random(FPalavras.Count)];
+    end;
+  end;
+
+  FPalavraAtual := vPalavraEscolhida;
+  FLetrasUtilizadas.Clear;
+  FLetrasDescobertas := 0;
+end;
+
+function TForm1.ValidarPalavra(aPalavra: String) : String;
+begin
+  if UpperCase(aPalavra) = FPalavraAtual then begin
+    FJogadores.Values[FJogadores.Names[FIndiceJogadorAtual]] := IntToStr(StrToInt(FJogadores.Values[FJogadores.Names[FIndiceJogadorAtual]]) +
+                                                              ((Length(FPalavraAtual) - FLetrasDescobertas) * FPontosValendo));
+    Result := 'Palavra correta';
+    ProximaRodada;
+  end else begin
+    Result := 'Palavra incorreta';
+    ProximoJogador;
+  end;
+end;
+
+function TForm1.ProcurarLetra(aLetra: string) : String;
+var
+  vLetra : String;
+  i: Integer;
+  vAcertos: Integer;
+begin
+  vAcertos := 0;
+  if (UpperCase(FPalavraAtual).IndexOf(UpperCase(aLetra).Chars[0]) < 0) then begin
+    Result := 'Letra nao encontrada.';
+    ProximoJogador;
+    Exit;
+  end;
+
+  if FLetrasUtilizadas.IndexOf(aLetra) < 0 then begin
+    FLetrasUtilizadas.Add(aLetra);
+  end else begin
+    Result := 'Letra ja escolhida.';
+    Exit;
+  end;
+
+  for i := 0 to Length(FPalavraAtual) - 1 do begin
+    vLetra := FPalavraAtual.Chars[i];
+    if UpperCase(vLetra) = UpperCase(aLetra) then begin
+      inc(vAcertos);
+    end;
+  end;
+
+  FJogadores.Values[FJogadores.Names[FIndiceJogadorAtual]] := IntToStr(StrToInt(FJogadores.Values[FJogadores.Names[FIndiceJogadorAtual]]) + (vAcertos * FPontosValendo));
+  if FLetrasDescobertas + vAcertos >= Length(FPalavraAtual) then begin
+    ProximaRodada;
+  end else begin
+    FLetrasDescobertas := FLetrasDescobertas + vAcertos;
+  end;
+  Result := 'Letra correta';
+end;
+
+procedure TForm1.ProximoJogador;
+begin
+  if (FIndiceJogadorAtual = FJogadores.Count - 1) or (FIndiceJogadorAtual = -1) then begin
+    FIndiceJogadorAtual := 0;
+  end
+  else begin
+    inc(FIndiceJogadorAtual);
+  end;
+end;
+
+{ ------------------------------------------------------- }
+
+constructor TCalculatorHandler.Create;
+begin
+  inherited Create;
+  FLog := TDictionary< Integer, ISharedStruct>.Create();
+end;
+
+
+destructor TCalculatorHandler.Destroy;
+begin
+  try
+    FreeAndNil( FLog);
+  finally
+    inherited Destroy;
+  end;
+end;
+
+
+procedure TCalculatorHandler.ping;
+begin
+ //
+end;
+
+
+function TCalculatorHandler.pesquisaPontos(num1: Integer; num2: Integer): Integer;
+begin
+  Result := StrToInt(FJogadores.Values[FJogadores.Names[num1]]);
+end;
+
+function TCalculatorHandler.calculate(logid: Integer; const w: IWork): Integer;
+begin
+  //
+end;
+
+
+function TCalculatorHandler.getStruct(key: Integer): ISharedStruct;
+begin
+ //
+end;
+
+
+procedure TCalculatorHandler.zip;
+begin
+ //
+end;
+
+
+
+
+
+end.
+

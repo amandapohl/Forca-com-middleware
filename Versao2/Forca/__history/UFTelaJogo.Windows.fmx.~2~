@@ -1,0 +1,9 @@
+inherited FTelaJogo_Windows: TFTelaJogo_Windows
+  DesignerMasterStyle = 0
+  inherited GroupBox2: TGroupBox
+    inherited SGJogadores: TStringGrid
+      Viewport.Width = 205.000000000000000000
+      Viewport.Height = 93.000000000000000000
+    end
+  end
+end
